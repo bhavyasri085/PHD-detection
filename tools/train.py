@@ -155,7 +155,10 @@ def main():
         logger.info(f"Epoch {epoch+1} loss={loss:.4f}")
 
         if (epoch+1) % cfg["train"]["eval_every"] == 0 or epoch == cfg["train"]["epochs"]-1:
+            # add these two lines before evaluate() call in train loop
+            model.conf_thresh = 0.001  # lower for evaluation
             metrics = evaluate(model, val_loader, device, cfg, epoch, writer)
+            model.conf_thresh = cfg["model"]["conf_thresh"]
             print_metrics(metrics, f"YoloX-{mc['size'].upper()} ep{epoch+1}")
             val_maps.append(metrics["mAP@0.5"])
             if metrics["mAP@0.5"] > best_map:
