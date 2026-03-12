@@ -1,42 +1,71 @@
-experiment_name: "yolox_s_phd_baseline"
-# output_dir: "experiments/yolox_s_baseline"
-output_dir: "/kaggle/working/experiments/yolox_s_baseline"
+experiment_name: "yolox_s_phd_baseline" 
+# a label for training run, used for training checkpoints, tensorboard logs, and experiment tracking 
 
-model:
-  size: "s"
-  num_classes: 1
-  neck_type: "panet"
-  conf_thresh: 0.25
-  iou_thresh: 0.45
 
-data:
-  root: "data/PHD/VOC2007"
+# output_dir: "experiments/yolox_s_baseline" 
+output_dir: "/kaggle/working/experiments/yolox_s_baseline" 
+# directory where training outputs are saved 
+
+model: 
+  size: "s" 
+  # size variant --> n,s,m,l,x --> speed and accuracy vary as we change this 
+  num_classes: 1 
+  # no.of object categories --> detects only head 
+  neck_type: "panet" 
+  # panet : path aggregation network --> improves multi scale feature fusion 
+  conf_thresh: 0.25 
+  # confidence threshold 
+  iou_thresh: 0.45 
+  # intersection over union --> used when comparing overlapping bounding boxes 
+
+data: 
+  root: "data/PHD/VOC2007" 
   img_size: [480, 640]
-  # num_workers: 4
-  num_workers: 2
-  pin_memory: true
+  # paper uses 640x480 as standard carriage surveillance image size 
+  # num_workers: 2 
+  num_workers: 4
+  # no.of cpu threads used for loading data 
+  pin_memory: true 
+  # pinned memory allows cpu -> gpu transfer faster 
 
-train:
-  epochs: 100
+train: 
+  epochs: 30
+  # paper trains for 100 epochs for full results
   # batch_size: 16
-  batch_size: 8
-  warmup_epochs: 5
+  # batch_size: 8
+  batch_size: 32
+  # paper uses 16 -- increased to 32 for faster training on Kaggle P100
+  # P100 has 16GB VRAM so 32 fits comfortably
+  # fewer steps per epoch = faster overall
+  warmup_epochs: 2
+  # paper uses warmup -- reduced from 5 since we have fewer epochs
   eval_every: 5
+  # evaluate every 5 epochs -- gives 6 checkpoints over 30 epochs
   save_every: 10
-  optimizer:
+  optimizer: 
     type: "sgd"
+    # paper uses SGD with momentum
     lr: 0.01
-    momentum: 0.9
-    weight_decay: 0.0005
-  scheduler:
-    type: "cosine"
-    min_lr: 1.0e-5
+    # learning rate 
+    momentum: 0.9 
+    # helps gradients move consistently 
+    weight_decay: 0.0005 
+    # regularisation technique --> penalizes large weights 
+  scheduler: 
+    type: "cosine" 
+    # controls how lr changes during training
+    min_lr: 1.0e-5 
+    # prevents lr becoming zero 
 
-eval:
-  batch_size: 8
+eval: 
+  batch_size: 16
+  # increased for faster evaluation
   conf_thresh: 0.001
-  iou_thresh: 0.65
+  # low threshold to compute full PR curve for mAP calculation
+  iou_thresh: 0.65 
 
-logging:
-  use_tensorboard: true
-  log_interval: 10
+logging: 
+  use_tensorboard: true 
+  # enables visualization 
+  log_interval: 10 
+  # training statistics printed every N iterations
