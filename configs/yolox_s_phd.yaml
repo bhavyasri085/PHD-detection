@@ -1,0 +1,42 @@
+experiment_name: "yolox_s_phd_baseline"
+# output_dir: "experiments/yolox_s_baseline"
+output_dir: "/kaggle/working/experiments/yolox_s_baseline"
+
+model:
+  size: "s"
+  num_classes: 1
+  neck_type: "panet"
+  conf_thresh: 0.25
+  iou_thresh: 0.45
+
+data:
+  root: "data/PHD/VOC2007"
+  img_size: [480, 640]
+  # num_workers: 4
+  num_workers: 2
+  pin_memory: true
+
+train:
+  epochs: 100
+  # batch_size: 16
+  batch_size: 8
+  warmup_epochs: 5
+  eval_every: 5
+  save_every: 10
+  optimizer:
+    type: "sgd"
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+  scheduler:
+    type: "cosine"
+    min_lr: 1.0e-5
+
+eval:
+  batch_size: 8
+  conf_thresh: 0.001
+  iou_thresh: 0.65
+
+logging:
+  use_tensorboard: true
+  log_interval: 10

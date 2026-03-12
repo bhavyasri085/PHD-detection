@@ -1,0 +1,15 @@
+### `.gitignore`
+```
+data/PHD/
+data/coco_format/
+experiments/
+*.pth
+*.pt
+*.ckpt
+__pycache__/
+*.py[cod]
+.env
+.venv
+*.log
+runs/
+.DS_Store
