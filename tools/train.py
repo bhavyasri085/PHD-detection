@@ -1,17 +1,22 @@
 import argparse, math, os, sys, time
 from pathlib import Path
+
+# always resolve to project root regardless of where script is called from
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+os.chdir(PROJECT_ROOT)
+sys.path.insert(0, str(PROJECT_ROOT))
+
 import torch, torch.nn as nn, yaml
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from loguru import logger
+import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.models.yolox import build_model
 from src.loss.yolox_loss import YoloXLoss
 from src.utils.dataset import PHDDataset, collate_fn
 from src.utils.metrics import DetectionEvaluator, print_metrics
 from src.utils.visualization import plot_training_curves
-import numpy as np
 
 
 def parse_args():
@@ -112,13 +117,14 @@ def save_ckpt(model, optimizer, epoch, metrics, out_dir, tag):
 
 
 def main():
-    args   = parse_args()
-    cfg    = yaml.safe_load(open(args.config))
-    device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
+    args    = parse_args()
+    cfg     = yaml.safe_load(open(args.config))
+    device  = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     out_dir = cfg["output_dir"]
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     logger.add(f"{out_dir}/train.log")
     logger.info(f"Device: {device}")
+    logger.info(f"Working dir: {os.getcwd()}")
 
     img_size  = tuple(cfg["data"]["img_size"])
     data_root = cfg["data"]["root"]
@@ -155,8 +161,8 @@ def main():
         logger.info(f"Epoch {epoch+1} loss={loss:.4f}")
 
         if (epoch+1) % cfg["train"]["eval_every"] == 0 or epoch == cfg["train"]["epochs"]-1:
-            # add these two lines before evaluate() call in train loop
-            model.conf_thresh = 0.001  # lower for evaluation
+            # lower conf_thresh for proper mAP evaluation
+            model.conf_thresh = 0.001
             metrics = evaluate(model, val_loader, device, cfg, epoch, writer)
             model.conf_thresh = cfg["model"]["conf_thresh"]
             print_metrics(metrics, f"YoloX-{mc['size'].upper()} ep{epoch+1}")

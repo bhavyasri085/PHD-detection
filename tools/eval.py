@@ -1,11 +1,16 @@
-import argparse, sys
+import argparse, os, sys
 from pathlib import Path
+
+# always resolve to project root regardless of where script is called from
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+os.chdir(PROJECT_ROOT)
+sys.path.insert(0, str(PROJECT_ROOT))
+
 import numpy as np, torch, yaml
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from loguru import logger
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.models.yolox import build_model
 from src.utils.dataset import PHDDataset, collate_fn
 from src.utils.metrics import DetectionEvaluator, FPSTimer, print_metrics
@@ -24,12 +29,14 @@ def main():
     args   = parse_args()
     cfg    = yaml.safe_load(open(args.config))
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
+    logger.info(f"Working dir: {os.getcwd()}")
+    logger.info(f"Device: {device}")
 
-    img_size  = tuple(cfg["data"]["img_size"])
-    H, W      = img_size
-    dataset   = PHDDataset(cfg["data"]["root"], args.split, img_size)
-    loader    = DataLoader(dataset, cfg["eval"]["batch_size"], shuffle=False,
-                           num_workers=cfg["data"]["num_workers"], collate_fn=collate_fn)
+    img_size = tuple(cfg["data"]["img_size"])
+    H, W     = img_size
+    dataset  = PHDDataset(cfg["data"]["root"], args.split, img_size)
+    loader   = DataLoader(dataset, cfg["eval"]["batch_size"], shuffle=False,
+                          num_workers=cfg["data"]["num_workers"], collate_fn=collate_fn)
 
     mc    = cfg["model"]
     model = build_model(mc["size"], mc["num_classes"], img_size, mc["neck_type"])
