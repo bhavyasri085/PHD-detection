@@ -29,7 +29,7 @@ data:
   # pinned memory allows cpu -> gpu transfer faster 
 
 train: 
-  epochs: 30
+  epochs: 60
   # paper trains for 100 epochs for full results
   # batch_size: 16
   # batch_size: 8
