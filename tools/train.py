@@ -100,6 +100,7 @@ def evaluate(model, loader, device, cfg, epoch=0, writer=None):
                 print(f"[DEBUG] pred box ranges: x=[{_det[:,0].min():.1f},{_det[:,2].max():.1f}], y=[{_det[:,1].min():.1f},{_det[:,3].max():.1f}]")
                 break
         break  # only check first batch
+    
         for i, det in enumerate(dets):
             # NEW — correctly converts normalized cx/cy/w/h → absolute x1/y1/x2/y2
             bt = targets[targets[:,0]==i]
