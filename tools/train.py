@@ -93,13 +93,25 @@ def evaluate(model, loader, device, cfg, epoch=0, writer=None):
         imgs    = batch["imgs"].to(device)
         targets = batch["targets"]
         dets    = model(imgs)
+        # Add temporarily inside evaluate() after dets = model(imgs), before the loop:
+        for _i, _det in enumerate(dets):
+            if len(_det) > 0:
+                print(f"[DEBUG] pred boxes[0]: {_det[0,:4]}  score: {_det[0,4]:.4f}")
+                print(f"[DEBUG] pred box ranges: x=[{_det[:,0].min():.1f},{_det[:,2].max():.1f}], y=[{_det[:,1].min():.1f},{_det[:,3].max():.1f}]")
+                break
+        break  # only check first batch
         for i, det in enumerate(dets):
+            # NEW — correctly converts normalized cx/cy/w/h → absolute x1/y1/x2/y2
             bt = targets[targets[:,0]==i]
             if len(bt) > 0:
-                gb = bt[:,2:6].numpy().copy()
-                gb[:,[0,2]] *= W; gb[:,[1,3]] *= H
+                cxcywh = bt[:,2:6].numpy().copy()          # normalized cx, cy, w, h
+                cx = cxcywh[:,0] * W
+                cy = cxcywh[:,1] * H
+                w  = cxcywh[:,2] * W
+                h  = cxcywh[:,3] * H
+                gb = np.stack([cx - w/2, cy - h/2, cx + w/2, cy + h/2], axis=1).astype(np.float32)
             else:
-                gb = np.zeros((0,4),dtype=np.float32)
+                gb = np.zeros((0,4), dtype=np.float32)
             pb = det[:,:4].cpu().numpy() if len(det)>0 else np.zeros((0,4),dtype=np.float32)
             ps = det[:,4].cpu().numpy()  if len(det)>0 else np.zeros(0,dtype=np.float32)
             ev.update(pb, ps, gb)
